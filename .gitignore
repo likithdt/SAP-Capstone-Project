@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Data artifacts
+data/raw/*.csv
+data/processed/*
+data/*.db*
+data/chroma/
+data/monitoring/reports/*
+mlruns/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

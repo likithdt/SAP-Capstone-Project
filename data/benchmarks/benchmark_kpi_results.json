@@ -1,0 +1,92 @@
+{
+  "model_kpis": {
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "false_positive_rate": 0.0,
+    "confusion_matrix": [
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2
+      ]
+    ]
+  },
+  "rul_kpis": {
+    "rul_mae_hours": 22.61,
+    "rul_rmse_hours": 28.41,
+    "rul_r2_score": -0.174
+  },
+  "latency_kpis": {
+    "feature_extraction_latency_sec": 0.005,
+    "inference_latency_sec": 0.0012,
+    "agentic_swarm_latency_sec": 0.1444,
+    "sap_dispatch_latency_sec": 0.0009,
+    "total_end_to_end_latency_sec": 0.1455
+  },
+  "erp_kpis": {
+    "sap_work_order_success_rate": 1.0,
+    "total_samples_evaluated": 14,
+    "fault_samples_evaluated": 12,
+    "successful_orders_created": 12
+  }
+}

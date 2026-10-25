@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "author": "SAP Capstone Industrial IoT Team",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "mpu", "top": -120, "left": -120, "attrs": {} },
+    { "type": "wokwi-ssd1306", "id": "oled", "top": -140, "left": 150, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot_current", "top": 180, "left": -140, "attrs": { "label": "ACS712 Current Sensor" } },
+    { "type": "wokwi-potentiometer", "id": "pot_temp", "top": 180, "left": 150, "attrs": { "label": "DS18B20 Temperature Probe" } },
+    { "type": "wokwi-led", "id": "led_status", "top": -30, "left": 180, "attrs": { "color": "green", "label": "AWS MQTT Status" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:GND.1", "mpu:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "mpu:VCC", "red", [ "v0" ] ],
+    [ "esp:21", "mpu:SDA", "blue", [ "v0" ] ],
+    [ "esp:22", "mpu:SCL", "yellow", [ "v0" ] ],
+    [ "esp:GND.1", "oled:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "oled:VCC", "red", [ "v0" ] ],
+    [ "esp:21", "oled:SDA", "blue", [ "v0" ] ],
+    [ "esp:22", "oled:SCL", "yellow", [ "v0" ] ],
+    [ "esp:34", "pot_current:SIG", "green", [ "v0" ] ],
+    [ "esp:GND.2", "pot_current:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot_current:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "pot_temp:SIG", "orange", [ "v0" ] ],
+    [ "esp:GND.2", "pot_temp:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot_temp:VCC", "red", [ "v0" ] ],
+    [ "esp:2", "led_status:A", "green", [ "v0" ] ],
+    [ "esp:GND.1", "led_status:C", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}

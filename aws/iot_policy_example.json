@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "iot:Connect",
+      "Resource": "arn:aws:iot:<REGION>:<ACCOUNT_ID>:client/<THING_NAME>"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Publish",
+      "Resource": "arn:aws:iot:<REGION>:<ACCOUNT_ID>:topic/factory/machines/<THING_NAME>/telemetry"
+    }
+  ]
+}

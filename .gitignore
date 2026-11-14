@@ -10,6 +10,11 @@ venv/
 .venv/
 env/
 
+# AWS & Cloud
+amazon/
+aws/
+.aws/
+
 # Data artifacts
 data/raw/*.csv
 data/processed/*
@@ -23,3 +28,5 @@ mlruns/
 .idea/
 .DS_Store
 Thumbs.db
+
+

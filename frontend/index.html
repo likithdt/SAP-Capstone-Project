@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial IoT Digital Twin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-industry"></i>
+                    <h1>Industrial IoT Digital Twin</h1>
+                </div>
+                <div class="status-badge">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Navigation -->
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-item active" data-tab="overview"><i class="fas fa-chart-line"></i> Overview</a></li>
+                    <li><a href="#" class="nav-item" data-tab="telemetry"><i class="fas fa-database"></i> Telemetry</a></li>
+                    <li><a href="#" class="nav-item" data-tab="sap"><i class="fas fa-tasks"></i> SAP Orders</a></li>
+                    <li><a href="#" class="nav-item" data-tab="demo"><i class="fas fa-play-circle"></i> Demo</a></li>
+                    <li><a href="#" class="nav-item" data-tab="benchmarks"><i class="fas fa-chart-bar"></i> Benchmarks</a></li>
+                </ul>
+            </nav>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Overview Tab -->
+                <div id="overview" class="tab-content active">
+                    <h2>System Overview</h2>
+                    <div class="grid">
+                        <div class="card">
+                            <h3>Asset Status</h3>
+                            <div class="status-info">
+                                <p><strong>Asset ID:</strong> <span id="assetId">-</span></p>
+                                <p><strong>State:</strong> <span id="assetState" class="badge">-</span></p>
+                                <p><strong>Health Score:</strong> <span id="healthScore">-</span>%</p>
+                                <div class="progress-bar">
+                                    <div id="healthBar" class="progress-fill"></div>
+                                </div>
+                            </div>
+                            <button onclick="app.loadOverview()" class="btn btn-primary">Refresh</button>
+                        </div>
+
+                        <div class="card">
+                            <h3>System KPIs</h3>
+                            <table class="kpi-table">
+                                <tr>
+                                    <td>Accuracy</td>
+                                    <td id="kpiAccuracy">-</td>
+                                </tr>
+                                <tr>
+                                    <td>Latency</td>
+                                    <td id="kpiLatency">-</td>
+                                </tr>
+                                <tr>
+                                    <td>False Positive Rate</td>
+                                    <td id="kpiFPR">-</td>
+                                </tr>
+                                <tr>
+                                    <td>SAP Success</td>
+                                    <td id="kpiSAPSuccess">-</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="card">
+                            <h3>Active Orders</h3>
+                            <div id="ordersContainer" class="list-container">
+                                <p class="empty">No active orders</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Recent Activity</h3>
+                            <div id="activityContainer" class="list-container">
+                                <p class="empty">No recent activity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry Tab -->
+                <div id="telemetry" class="tab-content">
+                    <h2>Telemetry Management</h2>
+                    <div class="grid">
+                        <div class="card">
+                            <h3>Ingest Telemetry</h3>
+                            <form id="telemetryForm" class="form">
+                                <div class="form-group">
+                                    <label>Asset ID</label>
+                                    <input type="text" id="assetIdInput" value="MOTOR-001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Device ID</label>
+                                    <input type="text" id="deviceIdInput" value="ESP32-MOTOR-001" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Temperature (°C)</label>
+                                        <input type="number" id="temperatureInput" value="49.5" step="0.1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Current (A)</label>
+                                        <input type="number" id="currentInput" value="1.22" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Vibration</label>
+                                        <input type="number" id="vibrationInput" value="0.24" step="0.01" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Speed (RPM)</label>
+                                        <input type="number" id="speedInput" value="1800" step="1" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Submit Telemetry</button>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <h3>Simulate Telemetry</h3>
+                            <form id="simulateForm" class="form">
+                                <div class="form-group">
+                                    <label>Fault Class</label>
+                                    <select id="faultClassInput" required>
+                                        <option value="0">0 - Nominal Healthy</option>
+                                        <option value="1">1 - Bearing Defect</option>
+                                        <option value="2">2 - Thermal Overheating</option>
+                                        <option value="3">3 - Electrical Issue</option>
+                                        <option value="4">4 - Alignment</option>
+                                        <option value="5">5 - Sensor Glitch</option>
+                                        <option value="6">6 - Combined Fault</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (seconds)</label>
+                                    <input type="number" id="durationInput" value="0.5" step="0.1" min="0.1" max="5" required>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block">Simulate</button>
+                            </form>
+                        </div>
+
+                        <div class="card full-width">
+                            <h3>Response</h3>
+                            <div id="telemetryResponse" class="response-box">
+                                <p class="empty">Response will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAP Tab -->
+                <div id="sap" class="tab-content">
+                    <h2>SAP Integration</h2>
+                    <button onclick="app.loadSAPOrders()" class="btn btn-primary" style="margin-bottom: 1rem;">Refresh</button>
+                    <div class="grid">
+                        <div class="card full-width">
+                            <h3>Maintenance Orders</h3>
+                            <div id="ordersTable" class="table-container">
+                                <p class="empty">Loading...</p>
+                            </div>
+                        </div>
+
+                        <div class="card full-width">
+                            <h3>Purchase Requisitions</h3>
+                            <div id="requisitionsTable" class="table-container">
+                                <p class="empty">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demo Tab -->
+                <div id="demo" class="tab-content">
+                    <h2>Jury Demonstration</h2>
+                    <div class="grid">
+                        <div class="card full-width">
+                            <h3>Run Scenarios</h3>
+                            <p>Execute all 4 demonstration scenarios</p>
+                            <button onclick="app.runDemo()" class="btn btn-warning btn-block btn-large">
+                                <i class="fas fa-play"></i> Start Demo
+                            </button>
+                            <div id="demoResults" class="results-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Benchmarks Tab -->
+                <div id="benchmarks" class="tab-content">
+                    <h2>KPI Benchmarks</h2>
+                    <div class="grid">
+                        <div class="card">
+                            <h3>Run Benchmarks</h3>
+                            <form id="benchmarkForm" class="form">
+                                <div class="form-group">
+                                    <label>Samples Per Class</label>
+                                    <input type="number" id="samplesInput" value="2" min="1" max="10" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Execute</button>
+                            </form>
+                        </div>
+
+                        <div class="card full-width">
+                            <h3>Results</h3>
+                            <div id="benchmarkResults" class="results-container">
+                                <p class="empty">Results will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

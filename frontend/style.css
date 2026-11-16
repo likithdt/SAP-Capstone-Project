@@ -1,14 +1,36 @@
-/* Global Styles */
+/* Global Styles - Light Theme with SAP & Code Unnati Colors */
 :root {
-    --primary: #00a8e8;
+    /* Primary & Accent - Attractive Blue */
+    --primary: #0066ff;           /* Bright Attractive Blue */
+    --primary-light: #0073ff;     /* Lighter Bright Blue */
+    --primary-dark: #0052cc;      /* Darker Blue for hover */
+    --accent: #ffd500;            /* Bright Yellow */
+    --secondary: #6200ea;         /* Vibrant Purple (AI/Agents) */
+    
+    /* Success, Warning, Danger */
     --success: #2ed573;
     --warning: #ffa502;
     --danger: #ff4757;
-    --bg-dark: #0f1419;
-    --bg-card: #1a1f2e;
-    --text-primary: #e0e7ff;
-    --text-secondary: #a0aec0;
-    --border: #2d3748;
+    
+    /* Light Theme Background */
+    --bg-primary: #ffffff;        /* White */
+    --bg-secondary: #f5f5f5;      /* Light Gray */
+    --bg-tertiary: #f9f9f9;       /* Very Light Gray */
+    --bg-hover: #f0f0f0;          /* Light Gray Hover */
+    
+    /* Text & Neutrals */
+    --text-primary: #1a1a1a;      /* Charcoal/Dark Gray */
+    --text-secondary: #666666;    /* Dark Gray */
+    --text-tertiary: #999999;     /* Light Gray */
+    --text-muted: #b3b3b3;        /* Slate */
+    
+    /* Borders & Dividers */
+    --border: #e0e0e0;            /* Light Gray Border */
+    --border-light: #f0f0f0;      /* Very Light Border */
+    
+    /* AI & Agents */
+    --ai-primary: #6200ea;        /* Vibrant Purple */
+    --ai-accent: #7c3aed;         /* Violet */
 }
 
 * {

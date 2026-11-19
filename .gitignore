@@ -11,9 +11,9 @@ venv/
 env/
 
 # AWS & Cloud
-amazon/
-aws/
-.aws/
+# amazon/
+# aws/
+# .aws/
 
 # Data artifacts
 data/raw/*.csv

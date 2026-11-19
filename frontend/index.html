@@ -16,9 +16,10 @@
                     <i class="fas fa-industry"></i>
                     <h1>Industrial IoT Digital Twin</h1>
                 </div>
-                <div class="status-badge">
+                <div class="status-badge" onclick="app.promptApiUrl()" style="cursor: pointer;" title="Click to switch API Host">
                     <span class="status-indicator" id="statusIndicator"></span>
                     <span id="statusText">Connecting...</span>
+                    <span id="apiHostLabel" style="font-size: 0.75rem; opacity: 0.75; margin-left: 6px;">(127.0.0.1:8000)</span>
                 </div>
             </div>
         </header>
@@ -33,6 +34,7 @@
                     <li><a href="#" class="nav-item" data-tab="sap"><i class="fas fa-tasks"></i> SAP Orders</a></li>
                     <li><a href="#" class="nav-item" data-tab="demo"><i class="fas fa-play-circle"></i> Demo</a></li>
                     <li><a href="#" class="nav-item" data-tab="benchmarks"><i class="fas fa-chart-bar"></i> Benchmarks</a></li>
+                    <li><a href="#" class="nav-item" data-tab="streamlit"><i class="fas fa-desktop"></i> Streamlit App</a></li>
                 </ul>
             </nav>
 
@@ -52,7 +54,10 @@
                                     <div id="healthBar" class="progress-fill"></div>
                                 </div>
                             </div>
-                            <button onclick="app.loadOverview()" class="btn btn-primary">Refresh</button>
+                            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                <button onclick="app.loadOverview()" class="btn btn-primary" style="flex:1;">Refresh</button>
+                                <button onclick="app.resetSystem()" class="btn btn-warning" title="Reset to healthy baseline" style="flex:1;"><i class="fas fa-undo"></i> Reset</button>
+                            </div>
                         </div>
 
                         <div class="card">
@@ -88,6 +93,54 @@
                             <h3>Recent Activity</h3>
                             <div id="activityContainer" class="list-container">
                                 <p class="empty">No recent activity</p>
+                            </div>
+                        </div>
+
+                        <!-- Prototype Fault Injection Presets -->
+                        <div class="card full-width">
+                            <h3>⚡ Live Prototype Simulation Presets</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.8rem; font-size: 0.9rem;">
+                                Click any scenario below to inject synthetic physics-modeled telemetry and trigger closed-loop ERP actions:
+                            </p>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button onclick="app.quickSimulate(0, 'Healthy Baseline')" class="btn btn-success" style="font-size:0.85rem;"><i class="fas fa-check-circle"></i> 0: Healthy (Normal)</button>
+                                <button onclick="app.quickSimulate(1, 'Bearing Defect (BPFO)')" class="btn btn-danger" style="font-size:0.85rem;"><i class="fas fa-exclamation-triangle"></i> 1: Bearing Defect (BPFO)</button>
+                                <button onclick="app.quickSimulate(2, 'Rotor Imbalance (1X)')" class="btn btn-warning" style="font-size:0.85rem;"><i class="fas fa-sync-alt"></i> 2: Rotor Imbalance</button>
+                                <button onclick="app.quickSimulate(3, 'Shaft Misalignment')" class="btn btn-warning" style="font-size:0.85rem;"><i class="fas fa-arrows-alt-h"></i> 3: Shaft Misalignment</button>
+                                <button onclick="app.quickSimulate(4, 'Thermal Overheating')" class="btn btn-danger" style="font-size:0.85rem;"><i class="fas fa-fire"></i> 4: Thermal Overheating</button>
+                                <button onclick="app.quickSimulate(6, 'Sensor Glitch')" class="btn btn-primary" style="font-size:0.85rem;"><i class="fas fa-bolt"></i> 6: Sensor Glitch</button>
+                            </div>
+                        </div>
+
+                        <!-- Real-Time Sensor Trend & Waveform Visualizer -->
+                        <div class="card full-width">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 8px;">
+                                <div>
+                                    <h3 style="margin-bottom: 2px;">📈 Multi-Sensor Telemetry Trends</h3>
+                                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Real-time rolling history from simulated dataset</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span id="streamBadge" class="badge" style="display:none; background:#065f46; color:#34d399;">STREAMING ACTIVE</span>
+                                    <button id="toggleStreamBtn" onclick="app.toggleStream()" class="btn btn-primary" style="font-size:0.85rem;">
+                                        <i class="fas fa-play"></i> Start Live Simulation Stream
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                        <span style="font-size:0.85rem; font-weight:600; color:#f97316;">Temperature (°C)</span>
+                                        <span id="chartCurrentTemp" style="font-size:0.85rem; color:#f97316;">-- °C</span>
+                                    </div>
+                                    <canvas id="tempChart" width="400" height="130" style="width:100%; height:130px; display:block;"></canvas>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.25); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                        <span style="font-size:0.85rem; font-weight:600; color:#06b6d4;">Radial Vibration RMS (g)</span>
+                                        <span id="chartCurrentVib" style="font-size:0.85rem; color:#06b6d4;">-- g</span>
+                                    </div>
+                                    <canvas id="vibChart" width="400" height="130" style="width:100%; height:130px; display:block;"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -221,6 +274,29 @@
                                 <p class="empty">Results will appear here</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Streamlit Tab -->
+                <div id="streamlit" class="tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <h2>Streamlit Prototype Analytics</h2>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Live synced with FastAPI backend. Make sure Streamlit is running with <code>python main.py dashboard --port 8501</code>.
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="document.getElementById('streamlitIframe').src = 'http://localhost:8501?t=' + Date.now()" class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Reload App
+                            </button>
+                            <a href="http://localhost:8501" target="_blank" class="btn btn-success">
+                                <i class="fas fa-external-link-alt"></i> Open New Tab (8501)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card full-width" style="padding: 0; overflow: hidden; height: 850px; border: 1px solid var(--border); border-radius: 8px;">
+                        <iframe id="streamlitIframe" src="http://localhost:8501" style="width: 100%; height: 100%; border: none; background: #0e1117;" title="Streamlit Digital Twin"></iframe>
                     </div>
                 </div>
             </div>

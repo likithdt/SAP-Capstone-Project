@@ -5,7 +5,10 @@
 
 class App {
     constructor() {
-        this.apiUrl = localStorage.getItem('apiUrl') || 'http://127.0.0.1:8000';
+        const isHosted = window.location.protocol.startsWith('http') && window.location.port !== '8501';
+        const defaultHost = isHosted ? window.location.origin : 'http://localhost:8501';
+        this.apiUrl = localStorage.getItem('apiUrl') || defaultHost;
+        this.streamInterval = null;
         this.init();
     }
 
@@ -62,33 +65,59 @@ class App {
             this.loadOverview();
         } else if (tabName === 'sap') {
             this.loadSAPOrders();
+        } else if (tabName === 'streamlit') {
+            const iframe = document.getElementById('streamlitIframe');
+            if (iframe && !iframe.getAttribute('data-loaded')) {
+                iframe.src = 'http://localhost:8501';
+                iframe.setAttribute('data-loaded', 'true');
+            }
         }
     }
 
     async checkAPIStatus() {
-        try {
-            const response = await fetch(`${this.apiUrl}/`);
-            if (response.ok) {
-                this.updateStatus(true);
-                return true;
+        const candidates = [this.apiUrl, 'http://127.0.0.1:8000', 'http://localhost:8000'];
+        const unique = [...new Set(candidates.filter(Boolean))];
+        for (const url of unique) {
+            try {
+                const response = await fetch(`${url}/`, { mode: 'cors' });
+                if (response.ok) {
+                    this.apiUrl = url;
+                    localStorage.setItem('apiUrl', url);
+                    this.updateStatus(true);
+                    return true;
+                }
+            } catch (error) {
+                // Try next host candidate
             }
-        } catch (error) {
-            this.updateStatus(false);
-            return false;
         }
+        this.updateStatus(false);
+        return false;
     }
 
     updateStatus(online) {
         const indicator = document.getElementById('statusIndicator');
         const text = document.getElementById('statusText');
+        const hostLabel = document.getElementById('apiHostLabel');
 
         if (online) {
             indicator.classList.add('online');
             text.textContent = 'Online';
+            if (hostLabel) hostLabel.textContent = `(${this.apiUrl})`;
         } else {
             indicator.classList.remove('online');
             text.textContent = 'Offline';
-            this.showToast('API connection failed', 'error', 5000);
+            if (hostLabel) hostLabel.textContent = `(${this.apiUrl})`;
+            this.showToast(`Cannot reach API at ${this.apiUrl}. Is the server running?`, 'error', 5000);
+        }
+    }
+
+    promptApiUrl() {
+        const next = prompt("Enter Backend API URL:", this.apiUrl);
+        if (next && next.trim()) {
+            this.apiUrl = next.trim().replace(/\/$/, '');
+            localStorage.setItem('apiUrl', this.apiUrl);
+            this.checkAPIStatus();
+            this.loadOverview();
         }
     }
 
@@ -103,7 +132,7 @@ class App {
             // Update asset info
             document.getElementById('assetId').textContent = data.asset_id || '-';
             document.getElementById('assetState').textContent = data.state || '-';
-            
+
             const health = data.health_score || 0;
             document.getElementById('healthScore').textContent = health.toFixed(0);
             document.getElementById('healthBar').style.width = health + '%';
@@ -114,8 +143,9 @@ class App {
             document.getElementById('kpiFPR').textContent = '3.2%';
             document.getElementById('kpiSAPSuccess').textContent = '98.5%';
 
-            // Load orders
+            // Load orders and history charts
             this.loadOrders();
+            this.loadHistoryCharts();
         } catch (error) {
             this.showToast(`Error: ${error.message}`, 'error');
         } finally {
@@ -233,7 +263,7 @@ class App {
             if (!response.ok) throw new Error('Failed to submit telemetry');
 
             const result = await response.json();
-            document.getElementById('telemetryResponse').innerHTML = 
+            document.getElementById('telemetryResponse').innerHTML =
                 `<pre>${JSON.stringify(result, null, 2)}</pre>`;
 
             this.showToast('Telemetry submitted successfully', 'success');
@@ -258,7 +288,7 @@ class App {
             if (!response.ok) throw new Error('Failed to simulate telemetry');
 
             const result = await response.json();
-            document.getElementById('telemetryResponse').innerHTML = 
+            document.getElementById('telemetryResponse').innerHTML =
                 `<pre>${JSON.stringify(result, null, 2)}</pre>`;
 
             this.showToast('Simulation completed', 'success');
@@ -358,6 +388,167 @@ class App {
         } finally {
             this.showLoader(false);
         }
+    }
+
+    async quickSimulate(faultClass, label) {
+        this.showToast(`Injecting scenario: ${label}...`, 'info', 2000);
+        this.showLoader(true);
+        try {
+            const response = await fetch(`${this.apiUrl}/api/telemetry/simulate?fault_class=${faultClass}&duration_sec=0.3`, {
+                method: 'POST'
+            });
+            if (!response.ok) throw new Error('Simulation failed');
+            const res = await response.json();
+            const state = res.twin_overview ? res.twin_overview.state : 'OK';
+            this.showToast(`Simulated: ${label} -> State: ${state}`, 'success', 3000);
+            await this.loadOverview();
+            if (res.sap_dispatch && res.sap_dispatch.dispatched) {
+                this.showToast(`🚨 Closed-Loop Action: SAP Work Order created!`, 'warning', 4000);
+            }
+        } catch (err) {
+            this.showToast(`Error: ${err.message}`, 'error');
+        } finally {
+            this.showLoader(false);
+        }
+    }
+
+    async resetSystem() {
+        this.showLoader(true);
+        try {
+            const response = await fetch(`${this.apiUrl}/api/dataset/reset`, { method: 'POST' });
+            if (!response.ok) throw new Error('Reset failed');
+            this.showToast('System reset to nominal healthy baseline (100% Health)', 'success');
+            await this.loadOverview();
+        } catch (err) {
+            this.showToast(`Reset error: ${err.message}`, 'error');
+        } finally {
+            this.showLoader(false);
+        }
+    }
+
+    toggleStream() {
+        const btn = document.getElementById('toggleStreamBtn');
+        const badge = document.getElementById('streamBadge');
+        if (this.streamInterval) {
+            clearInterval(this.streamInterval);
+            this.streamInterval = null;
+            if (btn) btn.innerHTML = '<i class="fas fa-play"></i> Start Live Simulation Stream';
+            if (badge) badge.style.display = 'none';
+            this.showToast('Live stream stopped', 'info', 2000);
+        } else {
+            const faults = [0, 0, 1, 0, 2, 4, 6];
+            let idx = 0;
+            this.streamInterval = setInterval(async () => {
+                const f = faults[idx % faults.length];
+                idx++;
+                try {
+                    await fetch(`${this.apiUrl}/api/telemetry/simulate?fault_class=${f}&duration_sec=0.2`, { method: 'POST' });
+                    this.loadOverview();
+                } catch (e) {
+                    console.warn('Stream step error', e);
+                }
+            }, 3000);
+
+            if (btn) btn.innerHTML = '<i class="fas fa-stop"></i> Stop Stream';
+            if (badge) badge.style.display = 'inline-block';
+            this.showToast('Live simulated telemetry stream started!', 'success', 2500);
+        }
+    }
+
+    async loadHistoryCharts() {
+        try {
+            const response = await fetch(`${this.apiUrl}/api/dataset/history?limit=30`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data.records && data.records.length > 0) {
+                const temps = data.records.map(r => parseFloat(r.temperature));
+                const vibs = data.records.map(r => parseFloat(r.vibration));
+
+                const curTemp = temps[temps.length - 1];
+                const curVib = vibs[vibs.length - 1];
+
+                const tempEl = document.getElementById('chartCurrentTemp');
+                const vibEl = document.getElementById('chartCurrentVib');
+                if (tempEl) tempEl.textContent = `${curTemp.toFixed(1)} °C`;
+                if (vibEl) vibEl.textContent = `${curVib.toFixed(3)} g`;
+
+                this.drawChart('tempChart', temps, 'rgb(249, 115, 22)', '°C', 75, 90);
+                this.drawChart('vibChart', vibs, 'rgb(6, 182, 212)', 'g', 1.0, 2.0);
+            }
+        } catch (e) {
+            console.warn('Could not load history charts:', e);
+        }
+    }
+
+    drawChart(canvasId, points, color, unit, warnThreshold, critThreshold) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        if (!points || points.length === 0) return;
+
+        let min = Math.min(...points);
+        let max = Math.max(...points);
+        if (warnThreshold) max = Math.max(max, warnThreshold * 1.05);
+        if (critThreshold) max = Math.max(max, critThreshold * 1.05);
+        const range = (max - min) || 1;
+        const padding = 12;
+
+        // Draw faint horizontal grid lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 3; i++) {
+            const y = padding + (height - 2 * padding) * (i / 3);
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(width - padding, y);
+            ctx.stroke();
+        }
+
+        // Draw warning threshold dashed line
+        if (warnThreshold && warnThreshold >= min && warnThreshold <= max) {
+            const yWarn = height - padding - ((warnThreshold - min) / range) * (height - 2 * padding);
+            ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(padding, yWarn);
+            ctx.lineTo(width - padding, yWarn);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Draw data curve
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        points.forEach((val, i) => {
+            const x = padding + (i / (points.length - 1)) * (width - 2 * padding);
+            const y = height - padding - ((val - min) / range) * (height - 2 * padding);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Area fill
+        ctx.lineTo(width - padding, height - padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, padding, 0, height - padding);
+        grad.addColorStop(0, color.replace(')', ', 0.35)').replace('rgb', 'rgba'));
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Latest point dot
+        const lastX = width - padding;
+        const lastY = height - padding - ((points[points.length - 1] - min) / range) * (height - 2 * padding);
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     showToast(message, type = 'info', duration = 3000) {

@@ -331,3 +331,23 @@ class DigitalTwin:
             "active_work_orders": list(self.active_work_orders),
             "active_purchase_requisitions": list(self.active_purchase_requisitions),
         }
+
+    def reset(self) -> None:
+        """Reset Digital Twin virtual model to nominal healthy baseline."""
+        self.current_status = "RUNNING"
+        self.state = AssetState.HEALTHY
+        self.health_score = 100.0
+        self.anomaly_score = 0.0
+        self.risk_level = "LOW"
+        self.predicted_failure_mode = "Healthy"
+        self.rul_hours = 120.0
+        self.temperature_c = 48.5
+        self.current_a = 1.20
+        self.rms_vibration = 0.22
+        self.speed_rpm = 1800.0
+        self.active_work_orders.clear()
+        self.active_purchase_requisitions.clear()
+        self.last_diagnostic_report = None
+        self.last_health_breakdown = None
+        self.state_history.clear()
+        self.telemetry_history.clear()

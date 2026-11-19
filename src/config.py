@@ -147,5 +147,3 @@ class AgentConfig(BaseModel):
 
 
 DEFAULT_AGENT_CONFIG = AgentConfig()
-
-

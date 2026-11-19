@@ -100,12 +100,64 @@ def run_server(host: str, port: int):
     uvicorn.run("src.api:app", host=host, port=port, reload=False)
 
 
+@cli.command("generate-dataset")
+@click.option("--samples", default=50, help="Samples per fault class.")
+@click.option("--output", default="data", help="Target output directory.")
+def run_generate_dataset(samples: int, output: str):
+    """Generate high-fidelity simulated multi-sensor telemetry datasets."""
+    console.print(Panel.fit("[bold green]Synthetic Multi-Sensor Dataset Generator[/bold green]", border_style="green"))
+    from scripts.generate_simulated_dataset import generate_full_dataset
+    res = generate_full_dataset(output_dir=output, samples_per_class=samples)
+    console.print(f"[bold green][SUCCESS][/bold green] Generated {res['record_count']} simulated records in [bold cyan]{res['csv']}[/bold cyan]!")
+
+
+@cli.command("dashboard")
+@click.option("--port", default=8501, help="Port to listen on for Streamlit dashboard.")
+def run_dashboard(port: int):
+    """Launch the interactive Streamlit Prototype Digital Twin dashboard."""
+    console.print(f"[bold green]Starting Streamlit Prototype Dashboard on http://localhost:{port}...[/bold green]")
+    import subprocess
+    cmd = [
+        sys.executable,
+        "-m",
+        "streamlit",
+        "run",
+        "amazon/dashboard/app.py",
+        "--server.port",
+        str(port),
+        "--server.headless",
+        "true",
+        "--browser.gatherUsageStats",
+        "false",
+    ]
+    subprocess.call(cmd)
+
+
+@cli.command("simulate-stream")
+@click.option("--fault", default="healthy", type=click.Choice(["healthy", "bearing", "thermal", "imbalance", "misalignment", "glitch"]), help="Fault class profile.")
+@click.option("--interval", default=3.0, help="Interval in seconds between telemetry bursts.")
+@click.option("--mode", default="local", type=click.Choice(["local", "api"]), help="Publishing destination: local CSV or FastAPI server.")
+def run_simulate_stream(fault: str, interval: float, mode: str):
+    """Stream live physics-simulated sensor readings continuously."""
+    console.print(Panel.fit(f"[bold cyan]Continuous Telemetry Simulator · Mode: {mode.upper()} | Fault: {fault.upper()}[/bold cyan]", border_style="cyan"))
+    import subprocess
+    cmd = [sys.executable, "amazon/simulator/sensor_simulator.py", "--mode", mode, "--fault", fault, "--interval", str(interval)]
+    subprocess.call(cmd)
+
+
 @cli.command("test")
 def run_tests():
     """Execute complete pytest test suite."""
     import subprocess
     cmd = [sys.executable, "-m", "pytest", "tests/", "-v"]
     sys.exit(subprocess.call(cmd))
+
+
+@cli.command("ci")
+def run_ci():
+    """Execute complete local CI/CD pipeline verification suite."""
+    from scripts.run_ci_checks import main as ci_main
+    ci_main()
 
 
 if __name__ == "__main__":

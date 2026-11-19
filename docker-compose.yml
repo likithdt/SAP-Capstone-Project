@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  # FastAPI Digital Twin & ERP REST Service (includes embedded HTML5 Dashboard)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iiot-digital-twin-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Streamlit Interactive Analytics & Harmonics Dashboard
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: iiot-streamlit-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional Background Edge Telemetry Simulator (run with: docker compose --profile simulation up)
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iiot-edge-simulator
+    profiles: ["simulation"]
+    command: ["python", "amazon/simulator/sensor_simulator.py", "--mode", "api", "--api-url", "http://backend:8000/api/telemetry", "--fault", "healthy", "--interval", "2.5"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

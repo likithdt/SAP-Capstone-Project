@@ -3,8 +3,11 @@ FastAPI REST API Service for Digital Twin, Agentic Swarm, and SAP Integration.
 Provides endpoints for telemetry ingestion, Fiori card rendering, ERP actions, and jury demo.
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from src.config import AssetConfig, DEFAULT_ASSET_CONFIG, FaultClass
@@ -24,6 +27,21 @@ app = FastAPI(
     description="Closed-Loop ERP Action with Multimodal Prognostics, LangGraph Swarm, and SAP S/4HANA OData Integration",
     version="1.0.0",
 )
+
+# Enable CORS for frontend dashboard (allowing cross-origin browser access)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount frontend directory for direct access at http://127.0.0.1:8000/dashboard
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if FRONTEND_DIR.is_dir():
+    app.mount("/dashboard", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="dashboard")
+    app.mount("/ui", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
 
 # Shared system singleton state
 twin = DigitalTwin()
@@ -57,7 +75,9 @@ def get_root():
         "plant": twin.plant,
         "state": twin.state.value,
         "health_score": twin.health_score,
+        "dashboard_url": "/dashboard",
         "endpoints": [
+            "/dashboard",
             "/api/twin",
             "/api/fiori/overview",
             "/api/telemetry",
@@ -152,3 +172,38 @@ def run_kpi_benchmarks(samples_per_class: int = Query(default=2, ge=1, le=10)):
     dataset = injector.generate_benchmark_dataset(samples_per_class=samples_per_class, duration_sec=0.2)
     results = evaluator.evaluate_benchmark(dataset)
     return results.to_dict()
+
+
+@app.get("/api/dataset/history")
+def get_dataset_history(limit: int = Query(default=50, ge=5, le=500)):
+    """Retrieve recent simulated dataset history for dashboard charting."""
+    from pathlib import Path
+    import pandas as pd
+    csv_file = Path("data/simulated_telemetry_history.csv")
+    if not csv_file.is_file():
+        from scripts.generate_simulated_dataset import generate_full_dataset
+        generate_full_dataset()
+    df = pd.read_csv(csv_file)
+    records = df.tail(limit).to_dict(orient="records")
+    return {
+        "total_records": len(df),
+        "limit": limit,
+        "records": records,
+    }
+
+
+@app.post("/api/dataset/reset")
+def reset_system_state():
+    """Reset Digital Twin and SAP client to pristine healthy state for demonstrations."""
+    twin.reset()
+    sap_client.ledger_orders.clear()
+    sap_client.ledger_prs.clear()
+    return {
+        "status": "RESET",
+        "asset_id": twin.asset_id,
+        "state": twin.state.value,
+        "health_score": twin.health_score,
+        "active_work_orders": twin.active_work_orders,
+        "message": "System digital twin and ERP ledgers reset to nominal baseline.",
+    }
+

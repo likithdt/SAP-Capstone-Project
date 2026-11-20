@@ -84,6 +84,7 @@ def get_root():
             "/api/sap/orders",
             "/api/sap/requisitions",
             "/api/demo/run",
+            "/api/demo/random",
             "/api/benchmarks/run",
         ],
     }
@@ -161,9 +162,26 @@ def get_sap_requisitions():
 
 
 @app.post("/api/demo/run")
-def run_live_jury_demo():
-    """Run all 4 jury demonstration scenarios."""
-    return demo_runner.run_all_scenarios()
+def run_live_jury_demo(
+    include_random: bool = Query(default=True, description="Whether to include randomized operational scenarios"),
+    random_count: int = Query(default=2, ge=0, le=10, description="Number of random scenarios to include"),
+):
+    """Run all 4 jury demonstration scenarios plus dynamic random scenarios."""
+    return demo_runner.run_all_scenarios(include_random=include_random, random_count=random_count)
+
+
+@app.post("/api/demo/random")
+def run_random_scenarios_endpoint(
+    count: int = Query(default=3, ge=1, le=10, description="Number of random scenarios to generate"),
+):
+    """Generate and execute dynamic randomized operational scenarios with varied assets, faults, and stock conditions."""
+    scenarios = demo_runner.generate_random_scenarios(count=count)
+    return {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "count": len(scenarios),
+        "scenarios": scenarios,
+        "summary": f"Successfully generated and executed {len(scenarios)} dynamic randomized operational scenarios.",
+    }
 
 
 @app.post("/api/benchmarks/run")

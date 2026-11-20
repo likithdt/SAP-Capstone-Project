@@ -303,35 +303,117 @@ class App {
         }
     }
 
-    async runDemo() {
+    renderScenarioCard(sc, defaultTitle = 'Scenario') {
+        const title = sc.scenario || defaultTitle;
+        const state = sc.final_state || 'UNKNOWN';
+        let badgeColor = '#2ed573'; // green
+        if (state === 'WARNING') badgeColor = '#ffa502';
+        else if (state === 'CRITICAL' || state === 'MAINTENANCE') badgeColor = '#ff4757';
+
+        const partsInStock = sc.parts_available !== false;
+        const partsBadge = partsInStock 
+            ? '<span style="color: #2ed573; font-weight: 600;">✓ In Stock</span>' 
+            : '<span style="color: #ff4757; font-weight: bold;">⚠ STOCKOUT (PR Dispatched)</span>';
+
+        let sapInfo = '';
+        if (sc.sap_work_order_id) {
+            sapInfo += `<div><strong>SAP PM Work Order:</strong> <span style="color: #ffa502; font-weight: bold;">#${sc.sap_work_order_id}</span> (Priority ${sc.priority || '2'})</div>`;
+        }
+        if (sc.sap_mm_pr_id) {
+            sapInfo += `<div><strong>SAP MM Purchase Req:</strong> <span style="color: #ff4757; font-weight: bold;">#${sc.sap_mm_pr_id}</span></div>`;
+        }
+        if (!sc.sap_work_order_id && !sc.sap_mm_pr_id) {
+            sapInfo += `<div><strong>ERP Action:</strong> <span style="color: #2ed573;">Zero false orders (Nominal / Sensor Calibration)</span></div>`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.style.borderLeftColor = badgeColor;
+        item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong style="font-size: 1.05rem;">${title}</strong>
+                <span style="background: ${badgeColor}22; color: ${badgeColor}; border: 1px solid ${badgeColor}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">
+                    ${state}
+                </span>
+            </div>
+            <p style="margin: 4px 0 8px 0; color: #a4b0be; font-size: 0.9rem;">${sc.message || ''}</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem;">
+                <div><strong>Asset:</strong> ${sc.asset_id || 'MOTOR-001'} ${sc.asset_name ? `(${sc.asset_name})` : ''}</div>
+                <div><strong>Health Score:</strong> <span style="font-weight: bold; color: ${badgeColor};">${(sc.health_score !== undefined ? sc.health_score : 100).toFixed(1)}</span></div>
+                <div><strong>Diagnosis:</strong> ${sc.predicted_mode || sc.fault_name || 'Nominal'}</div>
+                <div><strong>Spare Parts:</strong> ${partsBadge}</div>
+                ${sapInfo}
+            </div>
+        `;
+        return item;
+    }
+
+    async runDemo(includeRandom = true) {
         this.showLoader(true);
         try {
-            const response = await fetch(`${this.apiUrl}/api/demo/run`, { method: 'POST' });
+            const response = await fetch(`${this.apiUrl}/api/demo/run?include_random=${includeRandom}&random_count=2`, { method: 'POST' });
             if (!response.ok) throw new Error('Failed to run demo');
 
             const result = await response.json();
             const container = document.getElementById('demoResults');
             container.innerHTML = '';
 
-            const scenarios = [
-                { name: 'Scenario 1: Healthy', key: 'scenario_1' },
-                { name: 'Scenario 2: Bearing Defect', key: 'scenario_2' },
-                { name: 'Scenario 3: Thermal Stockout', key: 'scenario_3' },
-                { name: 'Scenario 4: Sensor Glitch', key: 'scenario_4' }
+            const coreScenarios = [
+                { name: '1. Nominal Healthy Equipment Monitoring', key: 'scenario_1_healthy' },
+                { name: '2. Developing Bearing Degradation (BPFO)', key: 'scenario_2_bearing_defect' },
+                { name: '3. Critical Thermal Overheating & Spare Stockout', key: 'scenario_3_thermal_stockout' },
+                { name: '4. Transient Sensor Glitch Discrimination', key: 'scenario_4_sensor_glitch' }
             ];
 
-            scenarios.forEach(scenario => {
-                const scenarioResult = result[scenario.key] || {};
-                const item = document.createElement('div');
-                item.className = 'result-item';
-                item.innerHTML = `
-                    <strong>✓ ${scenario.name}</strong>
-                    <p>${scenarioResult.message || 'Completed'}</p>
-                `;
-                container.appendChild(item);
+            coreScenarios.forEach(scDef => {
+                const sc = result[scDef.key] || {};
+                sc.scenario = scDef.name;
+                container.appendChild(this.renderScenarioCard(sc, scDef.name));
             });
 
-            this.showToast('Demo completed successfully', 'success');
+            if (result.random_scenarios && result.random_scenarios.length > 0) {
+                const header = document.createElement('h4');
+                header.style.marginTop = '18px';
+                header.style.marginBottom = '8px';
+                header.style.color = '#70a1ff';
+                header.innerHTML = '<i class="fas fa-dice"></i> Dynamic Randomized Operational Scenarios';
+                container.appendChild(header);
+
+                result.random_scenarios.forEach(rSc => {
+                    container.appendChild(this.renderScenarioCard(rSc, 'Random Scenario'));
+                });
+            }
+
+            this.showToast('Jury demo executed successfully', 'success');
+        } catch (error) {
+            this.showToast(`Error: ${error.message}`, 'error');
+        } finally {
+            this.showLoader(false);
+        }
+    }
+
+    async runRandomDemo() {
+        this.showLoader(true);
+        try {
+            const count = parseInt(document.getElementById('randomScenarioCount').value, 10) || 3;
+            const response = await fetch(`${this.apiUrl}/api/demo/random?count=${count}`, { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to generate random scenarios');
+
+            const result = await response.json();
+            const container = document.getElementById('demoResults');
+            container.innerHTML = '';
+
+            const header = document.createElement('h4');
+            header.style.marginBottom = '12px';
+            header.style.color = '#70a1ff';
+            header.innerHTML = `<i class="fas fa-dice"></i> Generated ${result.count || count} Dynamic Stochastic Operational Scenarios`;
+            container.appendChild(header);
+
+            (result.scenarios || []).forEach((sc, index) => {
+                container.appendChild(this.renderScenarioCard(sc, `Random Scenario ${index + 1}`));
+            });
+
+            this.showToast(`Generated ${result.count || count} random scenarios!`, 'success');
         } catch (error) {
             this.showToast(`Error: ${error.message}`, 'error');
         } finally {

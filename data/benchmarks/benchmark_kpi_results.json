@@ -79,9 +79,9 @@
   "latency_kpis": {
     "feature_extraction_latency_sec": 0.005,
     "inference_latency_sec": 0.0022,
-    "agentic_swarm_latency_sec": 0.1864,
+    "agentic_swarm_latency_sec": 0.1886,
     "sap_dispatch_latency_sec": 0.0009,
-    "total_end_to_end_latency_sec": 0.1886
+    "total_end_to_end_latency_sec": 0.1907
   },
   "erp_kpis": {
     "sap_work_order_success_rate": 1.0,

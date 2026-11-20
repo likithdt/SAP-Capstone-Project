@@ -133,3 +133,22 @@ def test_jury_demo_all_scenarios(jury_demo):
     s4 = summary["scenario_4_sensor_glitch"]
     assert s4["fault_class"] == FaultClass.SENSOR_ANOMALY
     assert s4["bearing_replacement_avoided"] is True
+
+
+def test_jury_demo_random_scenarios(jury_demo):
+    """Test dynamic generation of randomized operational scenarios."""
+    scenarios = jury_demo.generate_random_scenarios(count=3)
+    assert len(scenarios) == 3
+
+    for sc in scenarios:
+        assert "asset_id" in sc
+        assert "asset_name" in sc
+        assert "operating_rpm" in sc
+        assert "fault_class" in sc
+        assert "fault_name" in sc
+        assert "health_score" in sc
+        assert "final_state" in sc
+        assert "predicted_mode" in sc
+        assert "message" in sc
+        assert sc["health_score"] >= 0.0 and sc["health_score"] <= 100.0
+        assert sc["final_state"] in ["HEALTHY", "WARNING", "CRITICAL", "MAINTENANCE"]

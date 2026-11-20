@@ -13,7 +13,12 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # Ensure project root is available in sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_current = Path(__file__).resolve()
+if _current.parent.name == "dashboard" and _current.parent.parent.name == "amazon":
+    PROJECT_ROOT = _current.parent.parent.parent
+else:
+    PROJECT_ROOT = _current.parent.parent
+
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 

@@ -163,11 +163,20 @@ def main():
     asset_id = "MOTOR-001"
 
     # Auto-detect mode if not specified
+    def resolve_cert_path(p: str | None) -> Path | None:
+        if not p:
+            return None
+        path = Path(p)
+        return path if path.is_absolute() else (PROJECT_ROOT / path)
+
+    cert_path = resolve_cert_path(os.getenv("AWS_IOT_CERT"))
+    key_path = resolve_cert_path(os.getenv("AWS_IOT_PRIVATE_KEY"))
+    root_ca_path = resolve_cert_path(os.getenv("AWS_IOT_ROOT_CA"))
+
     mode = args.mode
     if mode is None:
-        cert = os.getenv("AWS_IOT_CERT")
         endpoint = os.getenv("AWS_IOT_ENDPOINT")
-        if cert and Path(cert).is_file() and endpoint:
+        if cert_path and cert_path.is_file() and endpoint:
             mode = "mqtt"
         else:
             mode = "local"
@@ -205,20 +214,17 @@ def main():
 
         endpoint = os.getenv("AWS_IOT_ENDPOINT")
         topic = os.getenv("AWS_IOT_TOPIC", f"factory/machines/{thing_name}/telemetry")
-        cert = os.getenv("AWS_IOT_CERT")
-        key = os.getenv("AWS_IOT_PRIVATE_KEY")
-        root_ca = os.getenv("AWS_IOT_ROOT_CA")
 
-        for label, path in [("certificate", cert), ("private key", key), ("Root CA", root_ca)]:
-            if not path or not Path(path).is_file():
-                raise SystemExit(f"{label} file not found: {path}. Use '--mode local' or '--mode api' instead.")
+        for label, path_obj in [("certificate", cert_path), ("private key", key_path), ("Root CA", root_ca_path)]:
+            if not path_obj or not path_obj.is_file():
+                raise SystemExit(f"{label} file not found: {path_obj}. Use '--mode local' or '--mode api' instead.")
 
         client = mqtt.Client(
             mqtt.CallbackAPIVersion.VERSION2,
             client_id=thing_name,
             protocol=mqtt.MQTTv311,
         )
-        client.tls_set(ca_certs=root_ca, certfile=cert, keyfile=key)
+        client.tls_set(ca_certs=str(root_ca_path), certfile=str(cert_path), keyfile=str(key_path))
         client.connect(endpoint, 8883, keepalive=60)
         client.loop_start()
 

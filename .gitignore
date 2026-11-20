@@ -29,4 +29,13 @@ mlruns/
 .DS_Store
 Thumbs.db
 
+# Secrets, Credentials & Environment
+.env
+*.env
+*.pem
+*.key
+*.crt
+certs/
+connect_device_package*/
+
 

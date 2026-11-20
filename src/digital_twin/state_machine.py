@@ -209,10 +209,29 @@ class DigitalTwin:
 
         # Update telemetry values from features or explicit overrides
         feats = report.features or {}
-        self.rms_vibration = rms_vibration or float(feats.get("rad_rms", self.rms_vibration))
-        self.temperature_c = temperature_c or float(feats.get("temp_mean", feats.get("temp_max", self.temperature_c)))
-        self.current_a = current_a or float(feats.get("current_mean", self.current_a))
-        self.speed_rpm = speed_rpm or float(feats.get("speed_mean", self.speed_rpm))
+        feat_rad_rms = feats.get("rad_rms")
+        if rms_vibration is not None:
+            self.rms_vibration = rms_vibration
+        elif feat_rad_rms is not None and float(feat_rad_rms) > 0.0:
+            self.rms_vibration = float(feat_rad_rms)
+
+        feat_temp = feats.get("temp_mean") or feats.get("temp_max")
+        if temperature_c is not None:
+            self.temperature_c = temperature_c
+        elif feat_temp is not None and float(feat_temp) > 0.0:
+            self.temperature_c = float(feat_temp)
+
+        feat_curr = feats.get("current_mean")
+        if current_a is not None:
+            self.current_a = current_a
+        elif feat_curr is not None and float(feat_curr) > 0.0:
+            self.current_a = float(feat_curr)
+
+        feat_speed = feats.get("speed_rpm_mean") or feats.get("speed_mean")
+        if speed_rpm is not None:
+            self.speed_rpm = speed_rpm
+        elif feat_speed is not None and float(feat_speed) > 0.0:
+            self.speed_rpm = float(feat_speed)
 
         self.anomaly_score = report.anomaly_score
         self.risk_level = report.risk_level

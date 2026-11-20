@@ -7,7 +7,7 @@
     "false_positive_rate": 0.0,
     "confusion_matrix": [
       [
-        1,
+        5,
         0,
         0,
         0,
@@ -17,7 +17,7 @@
       ],
       [
         0,
-        1,
+        5,
         0,
         0,
         0,
@@ -27,7 +27,7 @@
       [
         0,
         0,
-        1,
+        5,
         0,
         0,
         0,
@@ -37,7 +37,7 @@
         0,
         0,
         0,
-        1,
+        5,
         0,
         0,
         0
@@ -47,7 +47,7 @@
         0,
         0,
         0,
-        1,
+        5,
         0,
         0
       ],
@@ -57,7 +57,7 @@
         0,
         0,
         0,
-        1,
+        5,
         0
       ],
       [
@@ -67,26 +67,26 @@
         0,
         0,
         0,
-        1
+        5
       ]
     ]
   },
   "rul_kpis": {
-    "rul_mae_hours": 23.28,
-    "rul_rmse_hours": 29.1,
-    "rul_r2_score": -0.2313
+    "rul_mae_hours": 22.49,
+    "rul_rmse_hours": 28.07,
+    "rul_r2_score": -0.1458
   },
   "latency_kpis": {
     "feature_extraction_latency_sec": 0.005,
-    "inference_latency_sec": 0.0011,
-    "agentic_swarm_latency_sec": 0.1711,
+    "inference_latency_sec": 0.0022,
+    "agentic_swarm_latency_sec": 0.1864,
     "sap_dispatch_latency_sec": 0.0009,
-    "total_end_to_end_latency_sec": 0.1721
+    "total_end_to_end_latency_sec": 0.1886
   },
   "erp_kpis": {
     "sap_work_order_success_rate": 1.0,
-    "total_samples_evaluated": 7,
-    "fault_samples_evaluated": 6,
-    "successful_orders_created": 6
+    "total_samples_evaluated": 35,
+    "fault_samples_evaluated": 30,
+    "successful_orders_created": 30
   }
 }

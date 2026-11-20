@@ -61,8 +61,8 @@ def main():
             [py_exe, "-m", "compileall", "-q", "src", "amazon", "scripts", "main.py"],
         ),
         (
-            "2. Unit Tests (Simulator & Features)",
-            [py_exe, "-m", "pytest", "tests/test_simulator.py", "tests/test_features.py", "-q"],
+            "2. Complete Unit & Integration Test Suite (All 9 Suites)",
+            [py_exe, "-m", "pytest", "tests/", "-q"],
         ),
         (
             "3. Closed-Loop Jury Demonstration (4 Scenarios)",

@@ -244,14 +244,18 @@ class App {
     async submitTelemetry() {
         this.showLoader(true);
         try {
+            const rmsVal = parseFloat(document.getElementById('vibrationInput').value) || 0.24;
+            // Generate synthetic vibration array matching the input RMS (500 samples ~ 0.5s at 1000 Hz)
+            const syntheticVibration = Array.from({ length: 500 }, () => (Math.random() * 2 - 1) * Math.SQRT2 * rmsVal);
+
             const payload = {
                 asset_id: document.getElementById('assetIdInput').value,
                 device_id: document.getElementById('deviceIdInput').value,
                 temperature_c: parseFloat(document.getElementById('temperatureInput').value),
                 current_a: parseFloat(document.getElementById('currentInput').value),
-                rms_vibration: parseFloat(document.getElementById('vibrationInput').value),
+                rms_vibration: rmsVal,
                 speed_rpm: parseFloat(document.getElementById('speedInput').value),
-                vibration_x: []
+                vibration_x: syntheticVibration
             };
 
             const response = await fetch(`${this.apiUrl}/api/telemetry`, {

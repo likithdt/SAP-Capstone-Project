@@ -111,11 +111,19 @@ class ServerlessPipeline:
     def feature_engineering_lambda(self, event: Dict[str, Any], context: Any = None) -> Dict[str, Any]:
         """Extracts tabular time-domain and FFT spectral features from raw vibration window."""
         telem = event.get("cleaned_telemetry", event)
-        accel_x = np.array(telem["vibration_x"], dtype=np.float64)
+        raw_x = telem.get("vibration_x") or []
+        accel_x = np.array(raw_x, dtype=np.float64)
         accel_y = np.array(telem.get("vibration_y"), dtype=np.float64) if telem.get("vibration_y") else None
         accel_z = np.array(telem.get("vibration_z"), dtype=np.float64) if telem.get("vibration_z") else None
 
-        n = len(accel_x)
+        # Synthesize vibration window if empty (e.g. manual telemetry submission) to preserve scalar features
+        if len(accel_x) == 0:
+            n = 500
+            rms = float(telem.get("rms_vibration", 0.24))
+            accel_x = np.random.normal(0.0, max(0.01, rms), n)
+        else:
+            n = len(accel_x)
+
         temp_arr = np.full(n, float(telem.get("temperature_c", 50.0)))
         curr_arr = np.full(n, float(telem.get("current_a", 1.20)))
         speed_arr = np.full(n, float(telem.get("speed_rpm", 1800.0)))
